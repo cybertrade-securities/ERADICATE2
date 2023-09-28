@@ -80,11 +80,11 @@ __kernel void eradicate2_iterate(__global result * const pResult, __global const
 }
 
 void eradicate2_result_update(const uchar * const H, __global result * const pResult, const uchar score, const uchar scoreMax, const uint deviceIndex, const uint round) {
-	if (score && score > scoreMax) {
+	if (score && score >= scoreMax) {
 		const uchar hasResult = atomic_inc(&pResult[score].found); // NOTE: If "too many" results are found it'll wrap around to 0 again and overwrite last result. Only relevant if global worksize exceeds MAX(uint).
 
 		// Save only one result for each score, the first.
-		if (hasResult == 0) {
+		// if (hasResult == 0) {
 			// Reconstruct state with hash and extract salt
 			ethhash h = { .q = { ERADICATE2_INITHASH } };
 			h.d[6] += deviceIndex;
@@ -100,7 +100,7 @@ void eradicate2_result_update(const uchar * const H, __global result * const pRe
 			for (int i = 0; i < 20; ++i) {
 				pResult[score].hash[i] = H[i];
 			}
-		}
+		// }
 	}
 }
 

@@ -92,6 +92,8 @@ class Dispatcher {
 		unsigned int m_countPrint;
 		unsigned int m_countRunning;
 		bool m_quit;
+
+        std::vector<cl_uint> m_lastFounds;
 };
 
 #endif /* HPP_DISPATCHER */

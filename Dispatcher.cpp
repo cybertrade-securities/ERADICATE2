@@ -11,6 +11,8 @@
 #include <algorithm>
 #include "hexadecimal.hpp"
 
+std::ofstream m_logFile = std::ofstream("results.txt");
+
 static void printResult(const result r, const cl_uchar score, const std::chrono::time_point<std::chrono::steady_clock> & timeStart) {
 	// Time delta
 	const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - timeStart).count();
@@ -22,6 +24,7 @@ static void printResult(const result r, const cl_uchar score, const std::chrono:
 	// Print
 	const std::string strVT100ClearLine = "\33[2K\r";
 	std::cout << strVT100ClearLine << "  Time: " << std::setw(5) << seconds << "s Score: " << std::setw(2) << (int) score << " Salt: 0x" << strSalt << " Address: 0x" << strPublic << std::endl;
+    m_logFile << "Time: " << std::setw(5) << seconds << "s Score: " << std::setw(2) << (int) score << " Salt: 0x" << strSalt << " Address: 0x" << strPublic << std::endl;
 }
 
 Dispatcher::OpenCLException::OpenCLException(const std::string s, const cl_int res) :
@@ -79,7 +82,8 @@ Dispatcher::Device::~Device() {
 
 Dispatcher::Dispatcher(cl_context & clContext, cl_program & clProgram, const size_t worksizeMax, const size_t size)
 	: m_clContext(clContext), m_clProgram(clProgram), m_worksizeMax(worksizeMax), m_size(size), m_clScoreMax(0), m_eventFinished(NULL), m_countPrint(0) {
-
+    m_lastFounds.resize(ERADICATE2_MAX_SCORE + 1);
+    std::fill(m_lastFounds.begin(), m_lastFounds.end(), 0);
 }
 
 Dispatcher::~Dispatcher() {
@@ -165,10 +169,18 @@ void Dispatcher::enqueueKernelDevice(Device & d, cl_kernel & clKernel, size_t wo
 
 void Dispatcher::deviceDispatch(Device & d) {
 	// Check result
-	for (auto i = ERADICATE2_MAX_SCORE; i > m_clScoreMax; --i) {
+	for (auto i = ERADICATE2_MAX_SCORE; i >= m_clScoreMax; --i) {
 		result & r = d.m_memResult[i];
 
-		if (r.found > 0 && i >= d.m_clScoreMax) {
+        // equals to the current best score, only print the result
+        if (i == m_clScoreMax && r.found > m_lastFounds[i]) {
+            m_lastFounds[i] = r.found;
+            printResult(r, i, timeStart);
+        }
+
+        // greater than the current best score
+		if (i > m_clScoreMax && r.found > m_lastFounds[i] && i >= d.m_clScoreMax) {
+            m_lastFounds[i] = r.found;
 			d.m_clScoreMax = i;
 			CLMemory<cl_uchar>::setKernelArg(d.m_kernelIterate, 2, d.m_clScoreMax);
 
