@@ -174,6 +174,7 @@ void Dispatcher::deviceDispatch(Device & d) {
 
         // equals to the current best score, only print the result
         if (i == m_clScoreMax && r.found > m_lastFounds[i]) {
+            std::lock_guard<std::mutex> lock(m_mutex);
             m_lastFounds[i] = r.found;
             printResult(r, i, timeStart);
         }
