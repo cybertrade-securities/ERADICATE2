@@ -11,7 +11,7 @@
 #include <algorithm>
 #include "hexadecimal.hpp"
 
-std::ofstream m_logFile = std::ofstream("results.txt");
+std::ofstream m_logFile = std::ofstream("results.txt", std::ios_base::app);
 
 static void printResult(const result r, const cl_uchar score, const std::chrono::time_point<std::chrono::steady_clock> & timeStart) {
 	// Time delta
